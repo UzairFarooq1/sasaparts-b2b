@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
-const { sendReversalEmail } = require('../utils/mailer');
+const { sendReversalEmail, sendDispatchEmail } = require('../utils/mailer');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -62,14 +62,24 @@ router.get('/orders/:id/print', async (req, res) => {
 
 // ---------- Mark as dispatched (everything found & sent out) ----------
 router.post('/orders/:id/dispatch', async (req, res) => {
+  const orderId = req.params.id;
+
+  const [[order]] = await pool.query(
+    `SELECT o.*, b.business_name, b.email AS business_email
+     FROM orders o JOIN businesses b ON o.business_id = b.id WHERE o.id = ?`,
+    [orderId]
+  );
+  if (!order) return res.status(404).send('Order not found.');
+
   await pool.query(
     `UPDATE orders SET status = 'dispatched', dispatched_at = NOW() WHERE id = ?`,
-    [req.params.id]
+    [orderId]
   );
+
   // Also decrement live stock for each ok line item
   const [items] = await pool.query(
     `SELECT * FROM order_items WHERE order_id = ? AND status = 'ok'`,
-    [req.params.id]
+    [orderId]
   );
   for (const item of items) {
     await pool.query(`UPDATE parts SET stock_qty = GREATEST(stock_qty - ?, 0) WHERE id = ?`, [
@@ -77,7 +87,22 @@ router.post('/orders/:id/dispatch', async (req, res) => {
       item.part_id
     ]);
   }
-  res.redirect(`/admin/orders/${req.params.id}`);
+
+  // Tell the customer it's on its way, noting anything that was reversed earlier.
+  const [reversedItems] = await pool.query(
+    `SELECT * FROM order_items WHERE order_id = ? AND status = 'reversed'`,
+    [orderId]
+  );
+  await sendDispatchEmail({
+    toEmail: order.business_email,
+    businessName: order.business_name,
+    orderId,
+    total: order.total_amount,
+    items,
+    reversedItems
+  });
+
+  res.redirect(`/admin/orders/${orderId}`);
 });
 
 // ---------- Reverse a single line item (item wasn't actually available) ----------

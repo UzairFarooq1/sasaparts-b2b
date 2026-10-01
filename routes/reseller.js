@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { requireReseller } = require('../middleware/auth');
-const { sendNewOrderEmail } = require('../utils/mailer');
+const { sendNewOrderEmail, sendOrderConfirmationEmail } = require('../utils/mailer');
 
 const router = express.Router();
 router.use(requireReseller);
@@ -163,18 +163,32 @@ router.post('/checkout', async (req, res) => {
     // Clear cart
     req.session.cart = {};
 
-    // Notify admin by email (outside the transaction — don't block on SMTP)
-    await sendNewOrderEmail({
-      orderId,
-      businessName: req.session.user.business_name,
-      total,
-      items: items.map((i) => ({
-        part_number_snapshot: i.part.part_number,
-        name_snapshot: i.part.name,
-        quantity: i.quantity,
-        line_total: i.part.price * i.quantity
-      }))
-    });
+    // Email both sides (outside the transaction — a dead SMTP server must not
+    // undo an order that has already committed; both helpers swallow failures).
+    const emailItems = items.map((i) => ({
+      part_number_snapshot: i.part.part_number,
+      name_snapshot: i.part.name,
+      quantity: i.quantity,
+      line_total: i.part.price * i.quantity
+    }));
+
+    await Promise.all([
+      sendOrderConfirmationEmail({
+        toEmail: biz.email,
+        businessName: biz.business_name,
+        orderId,
+        total,
+        items: emailItems,
+        availableCredit: biz.credit_limit - newUsed
+      }),
+      sendNewOrderEmail({
+        orderId,
+        businessName: biz.business_name,
+        customerEmail: biz.email,
+        total,
+        items: emailItems
+      })
+    ]);
 
     res.redirect(`/orders/${orderId}`);
   } catch (err) {
