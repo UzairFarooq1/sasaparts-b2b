@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>My Orders — Techno Automotives</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+    <div class="card">
+      <h2>My Orders</h2>
+      <% if (orders.length === 0) { %>
+        <p style="color:var(--muted);">No orders yet.</p>
+      <% } else { %>
+        <table>
+          <thead><tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <% orders.forEach(o => { %>
+              <tr>
+                <td>#<%= o.id %></td>
+                <td><%= new Date(o.created_at).toLocaleString() %></td>
+                <td>KES <%= o.total_amount.toLocaleString() %></td>
+                <td><span class="badge badge-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
+                <td><a href="/orders/<%= o.id %>">View</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+  <%- include('_cartfab') %>
+</body>
+</html>

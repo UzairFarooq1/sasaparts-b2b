@@ -1,0 +1,21 @@
+{
+  "name": "techno-automotives-b2b",
+  "version": "1.0.0",
+  "description": "B2B reseller ordering system for auto spare parts, running fully on localhost.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "node db/seed.js",
+    "mail:test": "node utils/test-email.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "mysql2": "^3.11.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14"
+  }
+}

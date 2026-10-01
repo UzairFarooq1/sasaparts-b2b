@@ -1,0 +1,20 @@
+<div class="topbar">
+  <a class="brand" href="/"><img class="brand-logo" src="/img/logo.png" alt="Techno Automotives Limited" /></a>
+  <nav>
+    <% if (user.role === 'admin') { %>
+      <a href="/admin/orders">Orders</a>
+      <a href="/admin/businesses">Customers &amp; Credit</a>
+      <a href="/admin/parts">Parts &amp; Stock</a>
+    <% } else { %>
+      <a href="/catalog">Search Parts</a>
+      <a href="/cart">Cart</a>
+      <a href="/orders">My Orders</a>
+    <% } %>
+  </nav>
+  <div class="right">
+    <span style="color:var(--muted); font-size:0.9rem;"><%= user.business_name %> (<%= user.username %>)</span>
+    <form method="POST" action="/logout" style="margin:0;">
+      <button type="submit" class="btn-secondary">Logout</button>
+    </form>
+  </div>
+</div>

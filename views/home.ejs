@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Techno Automotives — Quality Parts. Trusted Performance.</title>
+  <meta name="description" content="Genuine and OEM spare parts for Kenya's garages and parts dealers. Search by part number, order on trade credit, same-day delivery in Nairobi." />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/home.css" />
+</head>
+<body>
+
+<header class="home-nav">
+  <a class="brand" href="/"><img class="brand-logo" src="/img/logo.png" alt="Techno Automotives Limited" /></a>
+  <nav>
+    <% if (user) { %>
+      <a href="/catalog">Search Parts</a>
+      <a href="/cart">Cart</a>
+      <a href="/orders">My Orders</a>
+    <% } else { %>
+      <a href="#categories">Categories</a>
+      <a href="#how">How it works</a>
+      <a href="#why">Why us</a>
+    <% } %>
+  </nav>
+  <div class="nav-actions">
+    <% if (user) { %>
+      <span class="nav-user"><%= user.business_name %></span>
+      <form method="POST" action="/logout" style="margin:0;">
+        <button type="submit" class="btn-secondary">Logout</button>
+      </form>
+    <% } else { %>
+      <a href="/login" class="btn">Login</a>
+    <% } %>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <% if (user) { %>
+        <p class="eyebrow">Welcome back, <%= user.business_name %></p>
+        <h1>What are you ordering today?</h1>
+      <% } else { %>
+        <p class="eyebrow">Trade pricing · Priority deliveries</p>
+        <h1>Quality Parts. Trusted Performance.</h1>
+      <% } %>
+      <p class="hero-sub">
+        Search <strong>120,000+</strong> OEM and aftermarket parts by number, vehicle or brand —
+        then order on trade credit in a single click. Same-day delivery in Nairobi,
+        next-day countrywide.
+      </p>
+
+      <form class="hero-search" method="GET" action="/catalog">
+        <input type="text" name="q" placeholder="Search any part e.g. 1nz air filter or 90915-03001" aria-label="Search parts" />
+        <button type="submit">Search</button>
+      </form>
+
+      <div class="popular">
+        <strong>Popular:</strong>
+        <% popular.forEach(term => { %>
+          <a href="/catalog?q=<%= encodeURIComponent(term) %>"><%= term %></a>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="cat-grid" id="categories">
+      <% categories.forEach(c => { %>
+        <a class="cat-card" href="/catalog?q=<%= encodeURIComponent(c.query) %>">
+          <div class="thumb"><%- c.icon %></div>
+          <div class="label"><%= c.name %></div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how">
+  <div class="section-inner">
+    <h2>Order in three steps</h2>
+    <p class="lede">Built for garages, hardware shops and parts dealers across Kenya.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">1</div>
+        <h3>Search by part number</h3>
+        <p>Type an OEM number, or the make and model, and see live stock and your trade price instantly.</p>
+      </div>
+      <div class="step">
+        <div class="num">2</div>
+        <h3>Build your cart</h3>
+        <p>Add every line you need. Your available credit updates as you go, so there are no surprises at checkout.</p>
+      </div>
+      <div class="step">
+        <div class="num">3</div>
+        <h3>Confirm and collect</h3>
+        <p>We pick, pack and dispatch. Track each order and reprint delivery slips from your dashboard.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="why">
+  <div class="section-inner">
+    <h2>Why customers order with us</h2>
+    <p class="lede">One account, one credit line, one place to reorder.</p>
+    <div class="stats">
+      <div class="stat"><div class="figure">120,000+</div><div class="caption">Parts catalogued</div></div>
+      <div class="stat"><div class="figure">Same day</div><div class="caption">Delivery in Nairobi</div></div>
+      <div class="stat"><div class="figure">30 days</div><div class="caption">Trade credit terms</div></div>
+      <div class="stat"><div class="figure">100%</div><div class="caption">Genuine &amp; OEM stock</div></div>
+    </div>
+  </div>
+</section>
+
+<% if (!user) { %>
+<section class="cta">
+  <h2>Ready to order at trade prices?</h2>
+  <p>Sign in to your account, or talk to us about opening one.</p>
+  <a class="btn-light" href="/login">Login</a>
+</section>
+<% } %>
+
+<footer class="home-footer">
+  &copy; <%= new Date().getFullYear() %> Techno Automotives Limited · Nairobi, Kenya
+  <% if (!user) { %>· <a href="/login">Login</a><% } %>
+</footer>
+
+  <%- include('_cartfab') %>
+</body>
+</html>

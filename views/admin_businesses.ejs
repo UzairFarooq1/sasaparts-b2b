@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Customers &amp; Credit — Admin</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+
+    <%- include('_flash', { ok, err }) %>
+
+    <div class="card">
+      <details class="admin-add" <%= err ? 'open' : '' %>>
+        <summary>+ Add a customer</summary>
+        <form method="POST" action="/admin/businesses" class="admin-form">
+          <label>Business name *<input type="text" name="business_name" required /></label>
+          <label>Contact person<input type="text" name="contact_person" /></label>
+          <label>Email *<input type="email" name="email" required /></label>
+          <label>Phone<input type="text" name="phone" /></label>
+          <label>Credit limit (KES)<input type="number" name="credit_limit" min="0" step="1" value="0" /></label>
+          <label>Login username *<input type="text" name="username" required autocomplete="off" /></label>
+          <label>Login password *<input type="text" name="password" required autocomplete="off" /></label>
+          <div class="admin-form-actions"><button type="submit">Add customer</button></div>
+        </form>
+        <p class="hint">The username and password are what this customer signs in with. Give them the password yourself — it isn't emailed.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Customers &amp; Credit Limits</h2>
+      <p class="hint">Edit any field and press Save. Suspended customers keep their history but can't place orders.</p>
+
+      <% if (businesses.length === 0) { %>
+        <p class="hint">No customers yet — add one above.</p>
+      <% } %>
+
+      <% businesses.forEach(b => { %>
+        <div class="admin-row">
+          <form method="POST" action="/admin/businesses/<%= b.id %>" class="admin-form">
+            <label>Business name<input type="text" name="business_name" value="<%= b.business_name %>" required /></label>
+            <label>Contact person<input type="text" name="contact_person" value="<%= b.contact_person || '' %>" /></label>
+            <label>Email<input type="email" name="email" value="<%= b.email %>" required /></label>
+            <label>Phone<input type="text" name="phone" value="<%= b.phone || '' %>" /></label>
+            <label>Credit limit<input type="number" name="credit_limit" min="0" step="1" value="<%= b.credit_limit %>" /></label>
+            <label>Status
+              <select name="status">
+                <option value="active" <%= b.status === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="suspended" <%= b.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+              </select>
+            </label>
+            <div class="admin-form-actions"><button type="submit">Save</button></div>
+          </form>
+
+          <div class="admin-meta">
+            <span>Used: KES <%= Number(b.credit_used).toLocaleString() %></span>
+            <span>Available: KES <%= (b.credit_limit - b.credit_used).toLocaleString() %></span>
+            <span>Orders: <%= b.order_count %></span>
+            <span>Logins: <%= b.logins || '—' %></span>
+          </div>
+
+          <div class="admin-row-actions">
+            <form method="POST" action="/admin/businesses/<%= b.id %>/password" class="inline-form">
+              <input type="text" name="username" placeholder="username" value="<%= (b.logins || '').split(', ')[0] %>" />
+              <input type="text" name="password" placeholder="new password" autocomplete="off" />
+              <button type="submit" class="btn-outline">Reset password</button>
+            </form>
+
+            <form method="POST" action="/admin/businesses/<%= b.id %>/delete" class="inline-form"
+                  onsubmit="return confirm('Delete <%= b.business_name.replace(/'/g, "\\'") %> and its logins? This cannot be undone.');">
+              <button type="submit" class="btn-danger">Delete customer</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>

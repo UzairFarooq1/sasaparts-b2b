@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>All Orders — Admin</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+    <div class="card">
+      <h2>Orders</h2>
+      <div style="margin-bottom:14px;">
+        <a href="/admin/orders" class="btn-outline btn" style="<%= !statusFilter ? 'background:var(--primary); color:white;' : '' %>">All</a>
+        <a href="/admin/orders?status=pending" class="btn-outline btn">Pending</a>
+        <a href="/admin/orders?status=dispatched" class="btn-outline btn">Dispatched</a>
+        <a href="/admin/orders?status=partially_reversed" class="btn-outline btn">Partially Reversed</a>
+        <a href="/admin/orders?status=reversed" class="btn-outline btn">Fully Reversed</a>
+      </div>
+
+      <% if (orders.length === 0) { %>
+        <p style="color:var(--muted);">No orders found.</p>
+      <% } else { %>
+        <table>
+          <thead><tr><th>Order #</th><th>Business</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <% orders.forEach(o => { %>
+              <tr>
+                <td>#<%= o.id %></td>
+                <td><%= o.business_name %></td>
+                <td><%= new Date(o.created_at).toLocaleString() %></td>
+                <td>KES <%= o.total_amount.toLocaleString() %></td>
+                <td><span class="badge badge-<%= o.status %>"><%= o.status.replace('_',' ') %></span></td>
+                <td><a href="/admin/orders/<%= o.id %>">View / Process</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

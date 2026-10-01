@@ -1,0 +1,9 @@
+# Ignore a specific file (like your environment variables containing API keys)
+.env
+
+# Ignore an entire folder and all its contents (like your node dependencies)
+node_modules/
+dist/
+
+# Ignore all files matching a specific extension (like log files)
+*.log

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Order #<%= order.id %> — Techno Automotives</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">Order #<%= order.id %></h2>
+        <span class="badge badge-<%= order.status %>"><%= order.status.replace('_',' ') %></span>
+      </div>
+      <p style="color:var(--muted);">
+        <% if (isAdmin) { %><%= order.business_name %> &middot; <% } %>
+        Placed <%= new Date(order.created_at).toLocaleString() %>
+        <% if (order.dispatched_at) { %> &middot; Dispatched <%= new Date(order.dispatched_at).toLocaleString() %><% } %>
+      </p>
+
+      <% if (isAdmin) { %>
+        <div class="no-print" style="margin: 14px 0; display:flex; gap:10px;">
+          <a class="btn" href="/admin/orders/<%= order.id %>/print" target="_blank">🖨️ Print Pick Slip</a>
+          <% if (order.status === 'pending') { %>
+            <form method="POST" action="/admin/orders/<%= order.id %>/dispatch">
+              <button type="submit">✅ Mark Fully Dispatched</button>
+            </form>
+          <% } %>
+        </div>
+      <% } %>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Part #</th><th>Name</th><th>Qty</th><th>Unit Price</th><th>Line Total</th><th>Status</th>
+            <% if (isAdmin) { %><th></th><% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(i => { %>
+            <tr style="<%= i.status === 'reversed' ? 'opacity:0.55; text-decoration: line-through;' : '' %>">
+              <td><%= i.part_number_snapshot %></td>
+              <td><%= i.name_snapshot %></td>
+              <td><%= i.quantity %></td>
+              <td>KES <%= i.unit_price.toLocaleString() %></td>
+              <td>KES <%= i.line_total.toLocaleString() %></td>
+              <td>
+                <% if (i.status === 'reversed') { %>
+                  <span class="badge badge-reversed">Reversed</span>
+                <% } else { %>
+                  <span class="badge badge-dispatched">OK</span>
+                <% } %>
+              </td>
+              <% if (isAdmin) { %>
+                <td>
+                  <% if (i.status === 'ok') { %>
+                    <form method="POST" action="/admin/orders/<%= order.id %>/items/<%= i.id %>/reverse"
+                          onsubmit="return confirm('Reverse this item and refund credit to the customer?');">
+                      <input type="text" name="reason" placeholder="Reason (optional)" style="width:140px;" />
+                      <button type="submit" class="btn-danger">Reverse</button>
+                    </form>
+                  <% } else { %>
+                    <span style="color:var(--muted); font-size:0.85rem;"><%= i.reversed_reason %></span>
+                  <% } %>
+                </td>
+              <% } %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
+      <div style="margin-top:16px; text-align:right;">
+        <% if (order.original_amount !== order.total_amount) { %>
+          <p style="color:var(--muted); margin:2px 0;">
+            Original: KES <%= order.original_amount.toLocaleString() %>
+          </p>
+        <% } %>
+        <p style="font-size:1.1rem;"><strong>Current Total: KES <%= order.total_amount.toLocaleString() %></strong></p>
+      </div>
+    </div>
+  </div>
+  <%- include('_cartfab') %>
+</body>
+</html>

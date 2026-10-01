@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Cart — Techno Automotives</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+    <div class="card">
+      <h2>Your Cart</h2>
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="error-msg"><%= error %></div>
+      <% } %>
+
+      <% if (items.length === 0) { %>
+        <p style="color:var(--muted);">Your cart is empty. <a href="/catalog">Search for parts</a> to add items.</p>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr><th>Part #</th><th>Name</th><th>Unit Price</th><th>Qty</th><th>Line Total</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% items.forEach(i => { %>
+              <tr>
+                <td><%= i.part.part_number %></td>
+                <td><%= i.part.name %></td>
+                <td>KES <%= i.part.price.toLocaleString() %></td>
+                <td>
+                  <form method="POST" action="/cart/update" style="display:flex; gap:6px;">
+                    <input type="hidden" name="part_id" value="<%= i.part.id %>" />
+                    <input type="number" name="quantity" value="<%= i.quantity %>" min="0" class="qty-input" />
+                    <button type="submit" class="btn-outline">Update</button>
+                  </form>
+                </td>
+                <td>KES <%= (i.part.price * i.quantity).toLocaleString() %></td>
+                <td>
+                  <form method="POST" action="/cart/remove">
+                    <input type="hidden" name="part_id" value="<%= i.part.id %>" />
+                    <button type="submit" class="btn-danger">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+
+        <hr style="border-color: var(--border); margin: 20px 0;" />
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <p style="margin:2px 0;"><strong>Order Total:</strong> KES <%= total.toLocaleString() %></p>
+            <p style="margin:2px 0; color:var(--muted);">Available credit: KES <%= availableCredit.toLocaleString() %></p>
+          </div>
+          <form method="POST" action="/checkout">
+            <button type="submit" <%= !canCheckout ? 'disabled' : '' %> style="font-size:1rem; padding:12px 24px;">
+              Checkout
+            </button>
+          </form>
+        </div>
+        <% if (!canCheckout && total > availableCredit) { %>
+          <p style="color:var(--danger); margin-top:10px;">⚠️ This order exceeds your available credit.</p>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

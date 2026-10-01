@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Login — Techno Automotives</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="card">
+      <img class="brand-logo" src="/img/logo.png" alt="Techno Automotives Limited" />
+      <h2>Techno Automotives Portal</h2>
+      <p style="color:var(--muted); margin-top:-8px;">Customer login</p>
+      <% if (error) { %>
+        <div class="error-msg"><%= error %></div>
+      <% } %>
+      <form method="POST" action="/login">
+        <input type="text" name="username" placeholder="Username" required autofocus />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Log In</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

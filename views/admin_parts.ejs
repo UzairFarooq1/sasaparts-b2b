@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Parts &amp; Stock — Admin</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+
+    <%- include('_flash', { ok, err }) %>
+
+    <div class="card">
+      <details class="admin-add" <%= err ? 'open' : '' %>>
+        <summary>+ Add a part</summary>
+        <form method="POST" action="/admin/parts" class="admin-form">
+          <label>Part number *<input type="text" name="part_number" required /></label>
+          <label>Name *<input type="text" name="name" required /></label>
+          <label>Brand<input type="text" name="make" /></label>
+          <label>Vehicle / model<input type="text" name="model" /></label>
+          <label>Year from<input type="number" name="year_from" min="1950" max="2100" /></label>
+          <label>Year to<input type="number" name="year_to" min="1950" max="2100" /></label>
+          <label>Price (KES)<input type="number" name="price" min="0" step="0.01" value="0" /></label>
+          <label>Stock qty<input type="number" name="stock_qty" min="0" step="1" value="0" /></label>
+          <div class="admin-form-actions"><button type="submit">Add part</button></div>
+        </form>
+        <p class="hint">The same part number can exist more than once as long as the brand or vehicle differs — that's how supplier variants are priced separately.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Parts &amp; Stock <span class="hint">(<%= total.toLocaleString() %> in catalogue)</span></h2>
+
+      <form class="search-box" method="GET" action="/admin/parts">
+        <input type="text" name="q" value="<%= q %>" placeholder="Search part number, name, brand or vehicle..." />
+        <button type="submit">Search</button>
+      </form>
+
+      <p class="hint">
+        <% if (q) { %>
+          <%= parts.length %> match<%= parts.length === 1 ? '' : 'es' %> for "<%= q %>"<%= parts.length === 300 ? ' (first 300 shown — narrow the search to see more)' : '' %>.
+        <% } else { %>
+          Showing the 200 most recently added. Search to find anything else.
+        <% } %>
+      </p>
+
+      <% if (parts.length === 0) { %>
+        <p class="hint">Nothing matched. Try a shorter search, or add the part above.</p>
+      <% } %>
+
+      <% parts.forEach(p => { %>
+        <div class="admin-row">
+          <form method="POST" action="/admin/parts/<%= p.id %>" class="admin-form">
+            <input type="hidden" name="q" value="<%= q %>" />
+            <label>Part number<input type="text" name="part_number" value="<%= p.part_number %>" required /></label>
+            <label>Name<input type="text" name="name" value="<%= p.name %>" required /></label>
+            <label>Brand<input type="text" name="make" value="<%= p.make || '' %>" /></label>
+            <label>Vehicle / model<input type="text" name="model" value="<%= p.model || '' %>" /></label>
+            <label>Year from<input type="number" name="year_from" value="<%= p.year_from === null ? '' : p.year_from %>" /></label>
+            <label>Year to<input type="number" name="year_to" value="<%= p.year_to === null ? '' : p.year_to %>" /></label>
+            <label>Price (KES)<input type="number" name="price" min="0" step="0.01" value="<%= p.price %>" /></label>
+            <label>Stock qty<input type="number" name="stock_qty" min="0" step="1" value="<%= p.stock_qty %>" /></label>
+            <div class="admin-form-actions"><button type="submit">Save</button></div>
+          </form>
+
+          <div class="admin-row-actions">
+            <% if (Number(p.price) === 0) { %>
+              <span class="badge badge-warn">No price set</span>
+            <% } %>
+            <% if (p.stock_qty === 0) { %>
+              <span class="badge badge-warn">Out of stock</span>
+            <% } %>
+            <form method="POST" action="/admin/parts/<%= p.id %>/delete" class="inline-form"
+                  onsubmit="return confirm('Delete <%= p.part_number.replace(/'/g, "\\'") %>? This cannot be undone.');">
+              <input type="hidden" name="q" value="<%= q %>" />
+              <button type="submit" class="btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>

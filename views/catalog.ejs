@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Search Parts — Techno Automotives</title>
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('_topbar', { user }) %>
+  <div class="container">
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+        <h2 style="margin:0;">Search Spare Parts</h2>
+        <span class="credit-pill">Available credit: KES <%= availableCredit.toLocaleString() %></span>
+      </div>
+      <form class="search-box" method="GET" action="/catalog">
+        <input type="text" name="q" value="<%= q %>" placeholder="Search by part number, name, make or model..." autofocus />
+        <button type="submit">Search</button>
+      </form>
+
+      <% if (q && results.length === 0) { %>
+        <p style="color:var(--muted);">No parts found for "<%= q %>".</p>
+      <% } %>
+
+      <% if (results.length > 0) { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Part #</th>
+              <th>Name</th>
+              <th>Fits</th>
+              <th>Price (KES)</th>
+              <th>Stock</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% results.forEach(p => { %>
+              <tr>
+                <td><strong><%= p.part_number %></strong></td>
+                <td><%= p.name %></td>
+                <td><%= p.make %> <%= p.model %> <% if (p.year_from) { %>(<%= p.year_from %>-<%= p.year_to %>)<% } %></td>
+                <td><%= p.price.toLocaleString() %></td>
+                <td>
+                  <% if (p.stock_qty > 5) { %>
+                    <span class="stock-in">In Stock (<%= p.stock_qty %>)</span>
+                  <% } else if (p.stock_qty > 0) { %>
+                    <span class="stock-low">Low (<%= p.stock_qty %>)</span>
+                  <% } else { %>
+                    <span class="stock-out">Out of Stock</span>
+                  <% } %>
+                </td>
+                <td>
+                  <form method="POST" action="/cart/add" style="display:flex; gap:6px;">
+                    <input type="hidden" name="part_id" value="<%= p.id %>" />
+                    <input type="number" name="quantity" value="1" min="1" class="qty-input" />
+                    <button type="submit" <%= p.stock_qty === 0 ? 'disabled' : '' %>>Add to Cart</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+  <%- include('_cartfab') %>
+</body>
+</html>
