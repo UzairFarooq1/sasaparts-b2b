@@ -16,9 +16,9 @@
   <a class="brand" href="/"><img class="brand-logo" src="/img/logo.png" alt="Techno Automotives Limited" /></a>
   <nav>
     <% if (user) { %>
-      <a href="/catalog">Search Parts</a>
-      <a href="/cart">Cart</a>
-      <a href="/orders">My Orders</a>
+      <a href="/catalog" class="<%= navActive('/catalog') %>">Search Parts</a>
+      <a href="/cart" class="<%= navActive('/cart') %>">Cart</a>
+      <a href="/orders" class="<%= navActive('/orders') %>">My Orders</a>
     <% } else { %>
       <a href="#categories">Categories</a>
       <a href="#how">How it works</a>

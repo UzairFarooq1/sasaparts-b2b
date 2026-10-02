@@ -40,8 +40,13 @@ app.use(
 );
 
 // The floating cart button needs the item count on every page a customer sees.
+// navActive marks the nav tab for the section being viewed, so /orders/12 still
+// lights up "My Orders".
 app.use((req, res, next) => {
   const u = req.session.user;
+  const path = req.path;
+  res.locals.navActive = (prefix) =>
+    path === prefix || path.startsWith(prefix + "/") ? "active" : "";
   res.locals.showCartFab = !!u && u.role !== "admin";
   res.locals.fabCartCount = Object.keys(req.session.cart || {}).length;
   next();
