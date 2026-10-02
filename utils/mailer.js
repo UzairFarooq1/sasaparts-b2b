@@ -92,6 +92,42 @@ async function sendReversalEmail({ toEmail, businessName, orderId, itemName, par
 }
 
 /**
+ * Welcome email with sign-in details, sent when an admin creates a customer.
+ */
+async function sendWelcomeEmail({ toEmail, businessName, contactPerson, username, password, creditLimit }) {
+  const loginUrl = (process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000)).replace(/\/+$/, '') + '/login';
+  const html = `
+    <p>Dear ${contactPerson || businessName},</p>
+    <p>Welcome to <strong>Techno Automotives</strong>. Your trade account for
+       <strong>${businessName}</strong> is now open, and you can order parts online right away.</p>
+
+    <table style="border-collapse:collapse; margin:18px 0; font-size:0.95rem;">
+      <tr><td style="padding:6px 14px 6px 0; color:#555;">Sign in at</td>
+          <td style="padding:6px 0;"><a href="${loginUrl}">${loginUrl}</a></td></tr>
+      <tr><td style="padding:6px 14px 6px 0; color:#555;">Username</td>
+          <td style="padding:6px 0;"><strong>${username}</strong></td></tr>
+      <tr><td style="padding:6px 14px 6px 0; color:#555;">Password</td>
+          <td style="padding:6px 0;"><strong>${password}</strong></td></tr>
+      <tr><td style="padding:6px 14px 6px 0; color:#555;">Credit limit</td>
+          <td style="padding:6px 0;"><strong>${money(creditLimit)}</strong></td></tr>
+    </table>
+
+    <p>Search our catalogue by part number, vehicle or brand, add what you need to your cart,
+       and check out against your credit. You'll get an email confirming every order and another
+       when it is dispatched.</p>
+    <p style="color:#555; font-size:0.9rem;">Please keep these details safe and don't share them.
+       If you'd like the password changed, just reply to this email and we'll reset it for you.</p>
+    <p>&mdash; Techno Automotives Team</p>
+  `;
+  return send({
+    to: toEmail,
+    subject: 'Welcome to Techno Automotives — your account details',
+    html,
+    label: `Welcome email for ${businessName}`
+  });
+}
+
+/**
  * Order confirmation to the customer, the moment checkout succeeds.
  */
 async function sendOrderConfirmationEmail({ toEmail, businessName, orderId, total, items, availableCredit }) {
@@ -220,6 +256,7 @@ async function sendLowStockReport(parts, threshold) {
 }
 
 module.exports = {
+  sendWelcomeEmail,
   sendOrderConfirmationEmail,
   sendDispatchEmail,
   sendReversalEmail,

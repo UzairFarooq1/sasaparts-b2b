@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
-const { sendReversalEmail, sendDispatchEmail } = require('../utils/mailer');
+const { sendReversalEmail, sendDispatchEmail, sendWelcomeEmail } = require('../utils/mailer');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -236,7 +236,21 @@ router.post('/businesses', async (req, res) => {
       [b.insertId, username.trim(), await bcrypt.hash(password, 10)]
     );
     await conn.commit();
-    back(res, '/admin/businesses', { ok: `Added ${business_name} with login "${username}".` });
+    // Emailed only after the commit: a mail failure must not undo a saved account.
+    const mailed = await sendWelcomeEmail({
+      toEmail: email.trim(),
+      businessName: business_name.trim(),
+      contactPerson: contact_person || null,
+      username: username.trim(),
+      password,
+      creditLimit: Number(credit_limit) || 0
+    });
+    back(res, '/admin/businesses', {
+      ok: `Added ${business_name} with login "${username}".` +
+          (mailed
+            ? ` Welcome email with their credentials sent to ${email.trim()}.`
+            : ` ⚠ The welcome email to ${email.trim()} could not be sent — pass the password on yourself.`)
+    });
   } catch (e) {
     await conn.rollback();
     const msg = isDuplicate(e) ? `The username "${username}" is already taken.` : e.message;
