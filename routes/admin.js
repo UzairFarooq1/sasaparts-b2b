@@ -243,7 +243,12 @@ router.post('/businesses', async (req, res) => {
       contactPerson: contact_person || null,
       username: username.trim(),
       password,
-      creditLimit: Number(credit_limit) || 0
+      creditLimit: Number(credit_limit) || 0,
+      // The host the admin is on is the right one to send customers to, unless
+      // that's a dev machine — then fall back to APP_URL.
+      baseUrl: /^(localhost|127\.0\.0\.1)/.test(req.get('host') || '')
+        ? null
+        : `${req.protocol}://${req.get('host')}`
     });
     back(res, '/admin/businesses', {
       ok: `Added ${business_name} with login "${username}".` +

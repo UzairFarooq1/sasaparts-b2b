@@ -94,8 +94,15 @@ async function sendReversalEmail({ toEmail, businessName, orderId, itemName, par
 /**
  * Welcome email with sign-in details, sent when an admin creates a customer.
  */
-async function sendWelcomeEmail({ toEmail, businessName, contactPerson, username, password, creditLimit }) {
-  const loginUrl = (process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000)).replace(/\/+$/, '') + '/login';
+async function sendWelcomeEmail({ toEmail, businessName, contactPerson, username, password, creditLimit, baseUrl }) {
+  // Prefer the address the admin is actually on, so the link is never localhost
+  // for a customer. APP_URL / Vercel's own hostname are the fallbacks.
+  const base =
+    baseUrl ||
+    process.env.APP_URL ||
+    (process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : '') ||
+    'http://localhost:' + (process.env.PORT || 3000);
+  const loginUrl = base.replace(/\/+$/, '') + '/login';
   const html = `
     <p>Dear ${contactPerson || businessName},</p>
     <p>Welcome to <strong>Techno Automotives</strong>. Your trade account for
