@@ -1,7 +1,7 @@
 // Run with: npm run seed
 // Creates an admin login, a demo reseller login, and a handful of sample parts.
 require('dotenv').config();
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const pool = require('./pool');
 
 async function main() {
@@ -26,7 +26,7 @@ async function main() {
     await conn.query(
       `INSERT INTO users (business_id, username, password_hash, role)
        VALUES (?, 'admin', ?, 'admin')
-       ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)`,
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
       [adminBizId, adminPasswordHash]
     );
 
@@ -40,7 +40,7 @@ async function main() {
       await conn.query(
         `INSERT INTO users (business_id, username, password_hash, role)
          VALUES (?, 'demo_reseller', ?, 'reseller')
-         ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash)`,
+         ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
         [demoBizId, resellerPasswordHash]
       );
     }
@@ -61,7 +61,7 @@ async function main() {
       await conn.query(
         `INSERT INTO parts (part_number, name, make, model, year_from, year_to, price, stock_qty)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE name = VALUES(name)`,
+         ON CONFLICT (part_number, make, model) DO UPDATE SET name = EXCLUDED.name`,
         p
       );
     }

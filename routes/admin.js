@@ -1,11 +1,14 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const pool = require('../db/pool');
 const { requireAdmin } = require('../middleware/auth');
 const { sendReversalEmail, sendDispatchEmail } = require('../utils/mailer');
 
 const router = express.Router();
 router.use(requireAdmin);
+
+// Postgres reports a unique-key clash as 23505 (MySQL used ER_DUP_ENTRY).
+const isDuplicate = (e) => e.code === '23505' || e.code === 'ER_DUP_ENTRY';
 
 // Feedback after an add/edit/delete comes back as ?ok=... or ?err=... on the redirect.
 const back = (res, path, params) =>
@@ -199,7 +202,7 @@ router.post('/orders/:id/items/:itemId/reverse', async (req, res) => {
 router.get('/businesses', async (req, res) => {
   const [businesses] = await pool.query(
     `SELECT b.*,
-            (SELECT GROUP_CONCAT(u.username ORDER BY u.id SEPARATOR ', ')
+            (SELECT STRING_AGG(u.username, ', ' ORDER BY u.id)
                FROM users u WHERE u.business_id = b.id AND u.role = 'reseller') AS logins,
             (SELECT COUNT(*) FROM orders o WHERE o.business_id = b.id) AS order_count
      FROM businesses b
@@ -236,7 +239,7 @@ router.post('/businesses', async (req, res) => {
     back(res, '/admin/businesses', { ok: `Added ${business_name} with login "${username}".` });
   } catch (e) {
     await conn.rollback();
-    const msg = e.code === 'ER_DUP_ENTRY' ? `The username "${username}" is already taken.` : e.message;
+    const msg = isDuplicate(e) ? `The username "${username}" is already taken.` : e.message;
     back(res, '/admin/businesses', { err: msg });
   } finally {
     conn.release();
@@ -310,7 +313,7 @@ router.get('/parts', async (req, res) => {
     const like = `%${q}%`;
     [rows] = await pool.query(
       `SELECT * FROM parts
-       WHERE part_number LIKE ? OR name LIKE ? OR make LIKE ? OR model LIKE ?
+       WHERE part_number ILIKE ? OR name ILIKE ? OR make ILIKE ? OR model ILIKE ?
        ORDER BY part_number LIMIT 300`,
       [like, like, like, like]
     );
@@ -353,10 +356,9 @@ router.post('/parts', async (req, res) => {
     );
     back(res, '/admin/parts', { ok: `Added ${f[0]} — ${f[1]}.`, q: f[0] });
   } catch (e) {
-    const msg =
-      e.code === 'ER_DUP_ENTRY'
-        ? `${f[0]} already exists for that brand and vehicle. Edit the existing row, or give this one a different brand.`
-        : e.message;
+    const msg = isDuplicate(e)
+      ? `${f[0]} already exists for that brand and vehicle. Edit the existing row, or give this one a different brand.`
+      : e.message;
     back(res, '/admin/parts', { err: msg });
   }
 });
@@ -376,7 +378,7 @@ router.post('/parts/:id', async (req, res) => {
     );
     back(res, '/admin/parts', { ok: `Saved ${f[0]}.`, q: req.body.q || '' });
   } catch (e) {
-    const msg = e.code === 'ER_DUP_ENTRY' ? `${f[0]} already exists for that brand and vehicle.` : e.message;
+    const msg = isDuplicate(e) ? `${f[0]} already exists for that brand and vehicle.` : e.message;
     back(res, '/admin/parts', { err: msg, q: req.body.q || '' });
   }
 });

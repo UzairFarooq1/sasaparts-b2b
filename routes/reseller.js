@@ -21,8 +21,8 @@ router.get('/catalog', async (req, res) => {
     const like = `%${q}%`;
     [rows] = await pool.query(
       `SELECT * FROM parts
-       WHERE part_number LIKE ? OR name LIKE ? OR make LIKE ? OR model LIKE ?
-       ORDER BY (part_number = ?) DESC, part_number ASC
+       WHERE part_number ILIKE ? OR name ILIKE ? OR make ILIKE ? OR model ILIKE ?
+       ORDER BY (UPPER(part_number) = UPPER(?)) DESC, part_number ASC
        LIMIT 100`,
       [like, like, like, like, q]
     );
