@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
+const pgSession = require("connect-pg-simple")(session);
 const path = require("path");
 const cron = require("node-cron");
 
@@ -19,12 +20,22 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
+// Sessions live in Postgres, not in memory: on Vercel each request can hit a
+// different (or brand new) instance, so an in-memory store loses the login
+// immediately after it is set. connect-pg-simple creates its own table.
+app.set("trust proxy", 1); // Vercel terminates TLS in front of us
 app.use(
   session({
+    store: new pgSession({ pool: pool.pool, tableName: "session", createTableIfMissing: true }),
     secret: process.env.SESSION_SECRET || "dev_secret_change_me",
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 8 }, // 8 hours
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 8, // 8 hours
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    },
   }),
 );
 
@@ -48,10 +59,15 @@ app.use("/", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/", resellerRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅ Techno Automotives B2B running at http://localhost:${PORT}`);
-});
+// On Vercel the platform handles listening; api/index.js just imports this app.
+// Locally (npm start, or any direct `node app.js`) we bind a port ourselves.
+const isServerless = !!process.env.VERCEL;
+if (!isServerless) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`✅ Techno Automotives B2B running at http://localhost:${PORT}`);
+  });
+}
 
 // ---------- Daily low-stock report ----------
 const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD, 10) || 10;
@@ -71,8 +87,13 @@ async function runLowStockCheck() {
   }
 }
 
-// Runs every day at 7:00 AM server time. Change the cron expression to adjust timing.
-cron.schedule("0 7 * * *", runLowStockCheck);
+// Runs every day at 7:00 AM server time. node-cron needs a process that stays
+// alive, which serverless does not have. On Vercel the daily report therefore
+// does NOT run yet; it needs a Vercel Cron Job hitting a token-protected
+// endpoint (the current one requires an admin session, which cron cannot have).
+if (!isServerless) {
+  cron.schedule("0 7 * * *", runLowStockCheck);
+}
 
 // Lets an admin trigger it manually to test (visit /admin/low-stock-check while logged in)
 app.get("/admin/low-stock-check", async (req, res) => {
@@ -82,3 +103,5 @@ app.get("/admin/low-stock-check", async (req, res) => {
   await runLowStockCheck();
   res.send("Low-stock check run — check your email (and server console).");
 });
+
+module.exports = app;
